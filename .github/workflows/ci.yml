@@ -1,0 +1,38 @@
+
+name: Node.js CI
+
+# When should this workflow run?
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    # GitHub provides a temporary Ubuntu machine
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Check JavaScript syntax
+      - name: Check application syntax
+        run: |
+          node --check src/app.js
+          node --check src/server.js
