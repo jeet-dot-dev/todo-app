@@ -1,7 +1,6 @@
 
-name: Node.js CI
+name: Node.js CI/CD
 
-# When should this workflow run?
 on:
   push:
     branches:
@@ -12,27 +11,57 @@ on:
       - main
 
 jobs:
+  # ---------------- CI ----------------
   build:
-    # GitHub provides a temporary Ubuntu machine
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Download repository code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Install Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Step 3: Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # Step 4: Check JavaScript syntax
       - name: Check application syntax
         run: |
           node --check src/app.js
           node --check src/server.js
+
+  # ---------------- CD ----------------
+  deploy:
+    needs: build
+
+    # Deploy only after a push to main, never on pull requests
+    if: github.event_name == 'push'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VM_SSH_KEY }}
+
+      - name: Add VM to known hosts
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy to GCP VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+        run: |
+          ssh "$VM_USER@$VM_HOST" '
+            cd todo-app &&
+            git pull origin main &&
+            npm ci --omit=dev &&
+            pm2 restart todo-app --update-env
+          '
