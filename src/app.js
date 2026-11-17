@@ -33,6 +33,10 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.get("/hello",(req,res)=>{
+  return res.json({msg:"hello"})
+})
+
 app.get("/api/todos", (req, res) => {
   return res.status(200).json({
     data: todos,
