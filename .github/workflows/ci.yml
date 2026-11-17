@@ -60,8 +60,12 @@ jobs:
           VM_USER: ${{ secrets.VM_USER }}
         run: |
           ssh "$VM_USER@$VM_HOST" '
-            cd todo-app &&
-            git pull origin main &&
-            npm ci --omit=dev &&
+            export NVM_DIR="$HOME/.nvm"
+            . "$NVM_DIR/nvm.sh"
+            nvm use 26
+
+            cd /home/jeet/todo-app
+            git pull origin main
+            npm ci --omit=dev
             pm2 restart todo-app --update-env
           '
